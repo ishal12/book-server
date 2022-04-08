@@ -3,19 +3,13 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-// const oauth = require('express-openid-connect')
 
 const indexRouter = require('./routes/index');
 const apiRouter = require('./routes/api');
 
-const { notFoundResponse, unauthorizedResponse, errorResponse, successResponse } = require('./helpers/response');
-
+const response = require('./helpers/response');
 
 const app = express();
-
-// app.use(oauth.auth({
-//     secret: process.env.SECRET
-// }));
 
 app.use(cors());
 app.use(express.json());
@@ -39,26 +33,20 @@ mongoose.connection.off('error', (err) => {
 
 // Route Prefixes
 app.use('/', indexRouter);
-// app.use('/api/', apiRouter);
-// checkJwt
-// console.log('require', requiredScopes('read:book write:book'))
-// app.get('/', (req, res) => {
-// console.log('call', err)
-// try {
-//     return successResponse(res)
-// } catch (err) {
-//     return errorResponse(res, err.message);
-// }
-// });
+app.use('/api', apiRouter);
 
 // Throw 404 if URL not found
 app.all('*', function (req, res) {
-    return notFoundResponse(res, 'Not Found');
+    return response.notFoundResponse(res, 'Not Found');
+});
+
+app.use((err, req, res, next) => {
+    return res.set(err.headers).status(err.status).json({ message: err })
 });
 
 app.use((err, req, res, next) => {
     if (err.name === 'UnauthorizedError') {
-        return unauthorizedResponse(res, err.message);
+        return response.unauthorizedResponse(res, err.message);
     }
 });
 
